@@ -19,7 +19,7 @@ RUN .\python-3.11.4-amd64.exe /quiet InstallAllUsers=1 PrependPath=1 && del .\py
 
 COPY --from=builder /source/meta.zip .
 RUN powershell -command "Expand-Archive -Path .\meta.zip -DestinationPath 'C:\Program Files'" && del .\meta.zip
-RUN pip install MetaTrader5 pandas websockets Flask waitress && pip cache purge
+RUN pip install "numpy<2.0.0" MetaTrader5 pandas websockets Flask waitress && pip cache purge
 
 COPY --from=builder /source/streamer.py .
 COPY --from=builder /source/api_gateway.py . 
