@@ -8,7 +8,7 @@ import sys
 import MetaTrader5 as mt5
 import websockets
 
-# --- تنظیمات اولیه ---
+# Initial configurations
 MT5_ACCOUNT = int(os.environ.get("MT5_ACCOUNT", 0))
 MT5_PASSWORD = os.environ.get("MT5_PASSWORD", "")
 MT5_SERVER = os.environ.get("MT5_SERVER", "")
@@ -17,7 +17,7 @@ WEBSOCKET_URI = os.environ.get("WEBSOCKET_URI", "ws://localhost:8765")
 SEND_INTERVAL_SECONDS = 1
 RECONNECT_DELAY_SECONDS = 10
 
-# --- راه‌اندازی سیستم لاگینگ ---
+# Logging setup
 log_formatter = logging.Formatter('%(asctime)s - STREAMER - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -26,8 +26,13 @@ if not logger.handlers:
     console_handler.setFormatter(log_formatter)
     logger.addHandler(console_handler)
 
-# --- توابع متاتریدر ---
-def initialize_mt5():
+def initialize_mt5() -> bool:
+    """
+    Initialize connection to MetaTrader 5 terminal.
+    
+    Returns:
+        bool: True if initialization was successful, False otherwise.
+    """
     logger.info("Attempting to initialize MetaTrader 5...")
     if not mt5.initialize(path=MT5_PATH, portable=True, login=MT5_ACCOUNT, password=MT5_PASSWORD, server=MT5_SERVER):
         logger.error(f"MT5 initialize() failed, error code: {mt5.last_error()}")
@@ -36,7 +41,13 @@ def initialize_mt5():
     logger.info(f"Successfully initialized MT5 for account {MT5_ACCOUNT}")
     return True
 
-def get_realtime_data():
+def get_realtime_data() -> dict | None:
+    """
+    Retrieve real-time account and position data from MetaTrader 5.
+    
+    Returns:
+        dict | None: A dictionary containing account and position data, or None if retrieval fails.
+    """
     try:
         account_info = mt5.account_info()
         if not account_info:
@@ -66,14 +77,16 @@ def get_realtime_data():
         logger.error(f"Exception in get_realtime_data: {e}")
         return None
 
-# --- منطق اصلی ---
-async def stream_data_handler():
+async def stream_data_handler() -> None:
+    """
+    Connect to the WebSocket server and continuously stream data from MetaTrader 5.
+    """
     while True:
         try:
             async with websockets.connect(WEBSOCKET_URI) as websocket:
                 logger.info(f"Connected to WebSocket server: {WEBSOCKET_URI}")
                 
-                # معرفی خود به عنوان یک استریمر
+                # Introduce as streamer
                 await websocket.send(json.dumps({
                     "type": "streamer_hello",
                     "account_number": MT5_ACCOUNT
@@ -94,7 +107,7 @@ async def stream_data_handler():
 
 if __name__ == "__main__":
     logger.info("Streamer bot starting up...")
-    time.sleep(5)  # تاخیر اولیه
+    time.sleep(5)  # Initial delay
 
     if not all([MT5_ACCOUNT, MT5_PASSWORD, MT5_SERVER]):
         logger.critical("CRITICAL: MT5 environment variables not set. Exiting.")

@@ -1,0 +1,6 @@
+numpy<2.0.0
+MetaTrader5==5.0.4200
+pandas>=2.0.0,<3.0.0
+websockets>=12.0,<14.0
+Flask>=3.0.0,<4.0.0
+waitress>=3.0.0,<4.0.0

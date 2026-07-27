@@ -1,75 +1,78 @@
 # tests/test_api_connection.py
 
 import os
-import sys
-import json
 import requests
 
-# --- Persian: تنظیمات تست از متغیرهای محیطی خوانده می‌شود ---
-# --- English: Test settings are read from environment variables ---
 API_URL = os.environ.get("API_URL", "http://localhost:8080")
-API_KEY = os.environ.get("API_KEY", "") # --- Persian: کلید API باید ست شود --- | --- English: API Key must be set
+API_KEY = os.environ.get("API_KEY", "")
 
-def run_api_test():
+def test_health_endpoint():
     """
-    Persian: یک تست ساده برای اطمینان از صحت عملکرد API Gateway.
-    English: A simple test to ensure the API Gateway is functioning correctly.
+    Test the health endpoint to ensure the API is reachable.
     """
-    print(f"🧪 --- Running API test against: {API_URL} ---")
+    response = requests.get(f"{API_URL}/health", timeout=10)
+    assert response.status_code == 200, f"Expected 200 OK, got {response.status_code}"
+    response_data = response.json()
+    assert response_data.get("status") == "ok", "API is not healthy"
 
+def test_api_connection():
+    """
+    Test a valid API request with correct authentication.
+    """
     if not API_KEY:
-        print("❌ ERROR: API_KEY environment variable is not set. Cannot run test.")
-        sys.exit(1)
+        import pytest
+        pytest.skip("API_KEY environment variable is not set.")
 
-    # --- Persian: داده‌های لازم برای فراخوانی تابع account_info ---
-    # --- English: The necessary data to call the account_info function ---
     request_payload = {
         "function_name": "account_info"
     }
 
-    # --- Persian: هدرهای درخواست، شامل کلید API ---
-    # --- English: Request headers, including the API key ---
     request_headers = {
         "Content-Type": "application/json",
         "X-API-KEY": API_KEY
     }
 
-    try:
-        # --- Persian: ارسال درخواست POST به endpoint ---
-        # --- English: Sending a POST request to the endpoint ---
-        response = requests.post(f"{API_URL}/rpc", headers=request_headers, json=request_payload, timeout=10)
+    response = requests.post(f"{API_URL}/rpc", headers=request_headers, json=request_payload, timeout=10)
+    assert response.status_code == 200, f"Expected status code 200, got {response.status_code}"
+    
+    response_data = response.json()
+    assert response_data.get("status") == "success", "Response status is not 'success'"
+    assert response_data.get("function_name") == "account_info", "Function name in response is incorrect"
+    assert "data" in response_data, "Response is missing 'data' field"
+    assert "login" in response_data["data"], "Account data is missing 'login' field"
+    assert "balance" in response_data["data"], "Account data is missing 'balance' field"
 
-        # --- Persian: بررسی کد وضعیت HTTP ---
-        # --- English: Checking the HTTP status code ---
-        if response.status_code != 200:
-            print(f"❌ TEST FAILED: Received status code {response.status_code}")
-            print(f"   Response: {response.text}")
-            sys.exit(1)
+def test_unauthorized_access():
+    """
+    Test an API request without providing an API key, expecting a 401 Unauthorized response.
+    """
+    request_payload = {
+        "function_name": "account_info"
+    }
 
-        # --- Persian: بررسی محتوای پاسخ JSON ---
-        # --- English: Checking the content of the JSON response ---
-        response_data = response.json()
+    request_headers = {
+        "Content-Type": "application/json"
+    }
 
-        assert response_data.get("status") == "success", "Response status is not 'success'"
-        assert response_data.get("function_name") == "account_info", "Function name in response is incorrect"
-        assert "data" in response_data, "Response is missing 'data' field"
-        assert "login" in response_data["data"], "Account data is missing 'login' field"
-        assert "balance" in response_data["data"], "Account data is missing 'balance' field"
+    response = requests.post(f"{API_URL}/rpc", headers=request_headers, json=request_payload, timeout=10)
+    assert response.status_code == 401, f"Expected status code 401, got {response.status_code}"
 
-        print("✅ --- TEST PASSED ---")
-        print(f"Successfully connected and received account info for login: {response_data['data']['login']}")
-        # print(json.dumps(response_data, indent=2)) # Uncomment to see the full response
+def test_disallowed_function():
+    """
+    Test calling a disallowed function (e.g., 'initialize'), expecting a 403 Forbidden response.
+    """
+    if not API_KEY:
+        import pytest
+        pytest.skip("API_KEY environment variable is not set.")
 
-    except requests.exceptions.ConnectionError as e:
-        print(f"❌ TEST FAILED: Could not connect to the API Gateway at {API_URL}.")
-        print(f"   Error: {e}")
-        print("   Is the Docker container running and the port correctly mapped?")
-        sys.exit(1)
-    except Exception as e:
-        print(f"❌ TEST FAILED: An unexpected error occurred.")
-        print(f"   Error: {e}")
-        sys.exit(1)
+    request_payload = {
+        "function_name": "initialize"
+    }
 
+    request_headers = {
+        "Content-Type": "application/json",
+        "X-API-KEY": API_KEY
+    }
 
-if __name__ == "__main__":
-    run_api_test()
+    response = requests.post(f"{API_URL}/rpc", headers=request_headers, json=request_payload, timeout=10)
+    assert response.status_code == 403, f"Expected status code 403, got {response.status_code}"

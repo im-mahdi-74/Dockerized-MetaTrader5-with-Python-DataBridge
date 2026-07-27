@@ -1,0 +1,14 @@
+.git
+.gitignore
+.github
+.vscode
+.idea
+*.md
+LICENSE
+tests/
+websocket_hub/
+docker-compose.yml
+.env*
+__pycache__/
+*.pyc
+*.pyo

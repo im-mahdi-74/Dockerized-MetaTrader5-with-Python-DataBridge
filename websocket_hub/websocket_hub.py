@@ -7,6 +7,7 @@ import asyncio
 import websockets
 import json
 import logging
+from websockets.server import WebSocketServerProtocol
 
 # Setup logging
 logging.basicConfig(
@@ -21,7 +22,7 @@ STREAMERS = {}
 # A set to hold the data consumers (dashboards, viewers, etc.)
 VIEWERS = set()
 
-async def handle_streamer(websocket, account_id):
+async def handle_streamer(websocket: WebSocketServerProtocol, account_id: int | str) -> None:
     """
     Manages the logic for a connected Streamer.
     It forwards any message received from this client to all viewers.
@@ -38,7 +39,7 @@ async def handle_streamer(websocket, account_id):
         if account_id in STREAMERS:
             del STREAMERS[account_id]
 
-async def handle_viewer(websocket):
+async def handle_viewer(websocket: WebSocketServerProtocol) -> None:
     """
     Manages the logic for a connected Viewer.
     Its main job is to keep the connection alive to receive messages.
@@ -53,7 +54,7 @@ async def handle_viewer(websocket):
         logging.info(f"Viewer disconnected from {websocket.remote_address[0]}.")
         VIEWERS.remove(websocket)
 
-async def main_handler(websocket):
+async def main_handler(websocket: WebSocketServerProtocol) -> None:
     """
     The main handler that runs for each new connection.
     It identifies the client's role and routes it to the appropriate handler.
@@ -111,7 +112,7 @@ async def main_handler(websocket):
                 logging.info(f"Cleaned up viewer from {websocket.remote_address[0]}.")
 
 
-async def main():
+async def main() -> None:
     """
     The main function to start the server.
     """
