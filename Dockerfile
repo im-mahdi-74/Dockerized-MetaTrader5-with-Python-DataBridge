@@ -3,23 +3,22 @@ FROM mcr.microsoft.com/windows/servercore:ltsc2022
 
 WORKDIR /app
 
-# Copy Python installer and MT5 archive
-COPY python-3.11.4-amd64.exe .
+# Copy pre-built embedded Python (with all dependencies pre-installed) and MT5 archive
+COPY python-embed.zip .
 COPY meta.zip .
 
-# Install Python and clean up installer
-RUN .\python-3.11.4-amd64.exe /quiet InstallAllUsers=1 PrependPath=1 && del .\python-3.11.4-amd64.exe
+# Extract embedded Python to C:\Python and clean up
+RUN powershell -command "Expand-Archive -Path .\python-embed.zip -DestinationPath 'C:\Python'" && del .\python-embed.zip
+
+# Add Python to system PATH
+RUN setx /M PATH "C:\Python;C:\Python\Scripts;%PATH%"
 
 # Extract MT5 and clean up archive
 RUN powershell -command "Expand-Archive -Path .\meta.zip -DestinationPath 'C:\Program Files'" && del .\meta.zip
 
-# Copy dependencies list and install
-COPY requirements.txt .
-RUN pip install -r requirements.txt && pip cache purge
-
 # Copy application scripts
 COPY src/streamer.py .
-COPY src/api_gateway.py . 
+COPY src/api_gateway.py .
 COPY src/start.ps1 .
 
 # Define environment variable for the API Key

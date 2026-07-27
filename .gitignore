@@ -1,5 +1,6 @@
 # Large binaries
 meta.zip
+python-embed.zip
 *.exe
 
 # Python

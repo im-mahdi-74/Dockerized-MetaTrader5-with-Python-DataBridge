@@ -56,7 +56,7 @@ Docker Hub: [DockerHub/mt5-python](https://hub.docker.com/r/immahdi/mt5-python)
 * **Dockerfile** — builds the Windows container image with portable MT5 and the Python services.
 * **docker-compose.yml** — Simplifies running the container with predefined configurations and environment variables.
 * **.env.example** — Example environment file containing required configuration values.
-* **requirements.txt** — Python dependencies required for the services.
+* **requirements.txt** — Python dependencies reference (used for local development).
 * **.dockerignore** — Specifies files and directories to ignore when building the Docker image.
 * **src/streamer.py** — The inside-container service that reads MT5 account state and open trades and forwards JSON messages to the WebSocket Hub.
 * **src/api_gateway.py** — Exposes a secure, general-purpose RPC API on port `8080`. It listens for requests at the `/rpc` endpoint and executes `MetaTrader5` functions dynamically.
@@ -64,8 +64,9 @@ Docker Hub: [DockerHub/mt5-python](https://hub.docker.com/r/immahdi/mt5-python)
 * **websocket_hub/websocket_hub.py** — The central WebSocket Hub/Router. It accepts connections from multiple streamers and viewers and broadcasts data. **Run this on the machine you want to host the hub.**
 * **tests/test_api_connection.py** — An integration test script to verify that the API Gateway is running correctly and responding to requests.
 * **meta.zip** — (large) The portable MetaTrader 5 files. *Not checked in by default.* You must download this file and place it in the repo root before building the image locally.
+* **python-embed.zip** — Pre-built embedded Python 3.11 with all required libraries pre-installed. *Not checked in by default.*
 
-> **Note:** You must download `meta.zip` and the Python 3.11 installer (e.g., `python-3.11.4-amd64.exe`) and place them at the project root before building locally.
+> **Note:** You must download both `meta.zip` and `python-embed.zip` and place them at the project root before building locally. The embedded Python bundle includes all necessary dependencies (MetaTrader5, Flask, pandas, websockets, etc.) so no `pip install` is needed during the Docker build.
 
 Download `meta.zip` (place in repo root):
 * [meta.zip](https://drive.google.com/uc?export=download&id=1Uiwa4GjQMksct8ZGqIvhg_WdIGuvaiJu)
@@ -95,7 +96,7 @@ docker compose up -d
 
 ### 3) Build the Docker image locally (optional)
 
-If you prefer to build the image yourself (you must have `meta.zip` and the Python installer at the repository root):
+If you prefer to build the image yourself (you must have `meta.zip` and `python-embed.zip` at the repository root):
 
 ```bash
 # from repository root where Dockerfile is located
